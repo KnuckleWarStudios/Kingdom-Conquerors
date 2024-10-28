@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Tile Map with Character Sheet</title>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'MedievalSharp', sans-serif;
+            margin: 0;
+            background-color: black;
+            color: white;
+            overflow: hidden;
+            display: flex;
+        }
+
+        #map-container {
+            flex-grow: 1;
+            padding-left: 20px;
+            padding-right: 270px; /* Space for the character sheet */
+            box-sizing: border-box;
+            height: 100vh;
+        }
+
+        #map {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 2px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .tile {
+            background-color: #4caf50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+
+        .start-tile {
+            background-color: #ffa500; /* Different color for start tiles */
+            font-weight: bold;
+        }
+
+        #character-sheet {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 250px;
+            height: 100vh;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-left: 1px solid #ccc;
+            overflow-y: auto;
+            color: white;
+        }
+
+        #character-sheet h1, #character-sheet h2 {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        label {
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: block;
+        }
+
+        input, .button {
+            width: 100%;
+            margin-top: 5px;
+            padding: 8px;
+            font-size: 0.9em;
+            color: white;
+            background-color: black;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .button {
+            background-color: #4caf50;
+            cursor: pointer;
+            border: none;
+        }
+
+        #start-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 100;
+        }
+
+        #start-modal .modal-content {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map-container">
+    <div id="map">
+        <!-- Generate 30 square tiles -->
+        <script>
+            const map = document.getElementById('map');
+            for (let i = 0; i < 30; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                tile.innerText = `Tile ${i + 1}`;
+                tile.dataset.tileId = i + 1;
+
+                if (i === 7 || i === 13) { // Changed to Tiles 8 and 14
+                    tile.classList.add('start-tile');
+                }
+                
+                tile.addEventListener('click', function() {
+                    claimTile(i + 1);
+                });
+
+                map.appendChild(tile);
+            }
+        </script>
+    </div>
+</div>
+
+<div id="character-sheet">
+    <h1>Character Sheet</h1>
+
+    <label for="name">Character Name:</label>
+    <input type="text" id="name">
+
+    <label for="faction">Faction/Title:</label>
+    <input type="text" id="faction">
+
+    <label for="gold">Gold:</label>
+    <input type="number" id="gold" value="1000" disabled>
+
+    <div class="resource">
+        <label for="wood">Wood:</label>
+        <input type="number" id="wood" value="0" disabled>
+
+        <label for="stone">Stone:</label>
+        <input type="number" id="stone" value="0" disabled>
+
+        <label for="iron">Iron:</label>
+        <input type="number" id="iron" value="0" disabled>
+    </div>
+
+    <div class="resource">
+        <label for="weapons">Weapons:</label>
+        <input type="number" id="weapons" value="0" disabled>
+
+        <label for="armor">Armor:</label>
+        <input type="number" id="armor" value="0" disabled>
+
+        <label for="siegeMachines">Siege Machines:</label>
+        <input type="number" id="siegeMachines" value="0" disabled>
+
+        <label for="castles">Castles:</label>
+        <input type="number" id="castles" value="0" disabled>
+    </div>
+
+    <h2>Stats</h2>
+    <div class="stat">
+        <label for="army">Army:</label>
+        <input type="number" id="army" value="0" disabled>
+
+        <label for="influence">Influence:</label>
+        <input type="number" id="influence" value="0" disabled>
+
+        <label for="favor">Favor:</label>
+        <input type="number" id="favor" value="0" disabled>
+
+        <label for="piety">Piety:</label>
+        <input type="number" id="piety" value="0" disabled>
+    </div>
+
+    <h2>Actions</h2>
+    <div class="action">
+        <button class="button" onclick="generateStats()">Generate Stats</button>
+        <button class="button" onclick="saveCharacter()">Save Character</button>
+        <button class="button" onclick="loadCharacter()">Load Character</button>
+        <button class="button" onclick="dailyCycle()">Daily Cycle</button>
+    </div>
+
+    <h2>Combat Actions</h2>
+    <button class="button" onclick="attackWin()">Attack Win (+1 Influence, +50 Gold)</button>
+    <button class="button" onclick="attackLoss()">Attack Loss (-1 Army)</button>
+    <button class="button" onclick="defenseWin()">Defense Win (+1 Piety)</button>
+    <button class="button" onclick="defenseLoss()">Defense Loss (-1 Army)</button>
+
+    <h2>Shop</h2>
+    <button class="button" onclick="buy('army', 350)">Buy Army (350 Gold)</button>
+    <button class="button" onclick="buy('favor', 150)">Buy Favor (150 Gold)</button>
+    <button class="button" onclick="buy('prestige', 150)">Buy Prestige (150 Gold)</button>
+    <button class="button" onclick="buy('influence', 250)">Buy Influence (250 Gold)</button>
+    <button class="button" onclick="buyResource('wood', 100)">Buy Wood (100 Gold)</button>
+    <button class="button" onclick="buyResource('stone', 150)">Buy Stone (150 Gold)</button>
+    <button class="button" onclick="buyResource('iron', 200)">Buy Iron (200 Gold)</button>
+
+    <h2>Crafting & Building</h2>
+    <button class="button" onclick="craft('weapons', 2, 'iron')">Craft Weapon (2 Iron)</button>
+    <button class="button" onclick="craft('armor', 2, 'iron')">Craft Armor (2 Iron)</button>
+    <button class="button" onclick="buildSiegeMachine()">Build Siege Machine (2 Wood, 1 Iron, 1 Stone)</button>
+    <button class="button" onclick="buildCastle()">Build Castle (4 Stone)</button>
+
+    <h2>Character Summary</h2>
+    <div id="summary"></div>
+</div>
+
+<!-- Start modal for selecting starting tile -->
+<div id="start-modal">
+    <div class="modal-content">
+        <h2>Choose Your Starting Tile</h2>
+        <button class="button" onclick="chooseStartTile(8)">Tile 8</button>
+        <button class="button" onclick="chooseStartTile(14)">Tile 14</button>
+    </div>
+</div>
+
+<script>
+    const claimedTiles = new Set(); // Keep track of claimed tiles
+
+    function chooseStartTile(tileId) {
+        const name = document.getElementById('name').value || "Player";
+        const selectedTile = document.querySelector(`.tile[data-tile-id="${tileId}"]`);
+        if (selectedTile && !claimedTiles.has(selectedTile.innerText)) {
+            claimedTiles.add(selectedTile.innerText);
+            selectedTile.innerText += ` (Claimed by ${name})`; // Indicate the tile is claimed
+            selectedTile.style.backgroundColor = "#ff5722"; // Change color to indicate ownership
+
+            // Initialize character stats
+            generateStats();
+
+            updateSummary();
+        }
+        document.getElementById('start-modal').style.display = 'none';
+    }
+
+    function claimTile(tileId) {
+        const name = document.getElementById('name').value || "Player";
+        const tile = document.querySelector(`.tile[data-tile-id="${tileId}"]`);
+        if (tile && !claimedTiles.has(tile.innerText)) {
+            const influence = parseInt(document.getElementById('influence').value);
+            const claimedCount = claimedTiles.size;
+
+            if (influence > claimedCount) {
+                claimedTiles.add(tile.innerText);
+                tile.innerText += ` (Claimed by ${name})`;
+                tile.style.backgroundColor = "#ff5722"; // Change color to indicate ownership
+                updateSummary();
+            } else {
+                alert("Not enough influence to claim this tile!");
+            }
+        }
+    }
+
+    function buy(item, cost) {
+        const goldInput = document.getElementById('gold');
+        let gold = parseInt(goldInput.value);
+        if (gold >= cost) {
+            gold -= cost;
+            goldInput.value = gold;
+            const itemInput = document.getElementById(item);
+            itemInput.value = parseInt(itemInput.value) + 1; // Increment the item count
+            updateSummary();
+        } else {
+            alert("Not enough gold!");
+        }
+    }
+
+    function buyResource(resource, cost) {
+        const goldInput = document.getElementById('gold');
+        let gold = parseInt(goldInput.value);
+        if (gold >= cost) {
+            gold -= cost;
+            goldInput.value = gold;
+            const resourceInput = document.getElementById(resource);
+            resourceInput.value = parseInt(resourceInput.value) + 1; // Increment the resource count
+            updateSummary();
+        } else {
+            alert("Not enough gold!");
+        }
+    }
+
+    function craft(item, requiredAmount, resource) {
+        const resourceInput = document.getElementById(resource);
+        const itemInput = document.getElementById(item);
+        if (parseInt(resourceInput.value) >= requiredAmount) {
+            resourceInput.value = parseInt(resourceInput.value) - requiredAmount; // Deduct resources
+            itemInput.value = parseInt(itemInput.value) + 1; // Increment item count
+            updateSummary();
+        } else {
+            alert("Not enough resources!");
+        }
+    }
+
+    function buildSiegeMachine() {
+        const woodInput = document.getElementById('wood');
+        const ironInput = document.getElementById('iron');
+        const stoneInput = document.getElementById('stone');
+
+        if (parseInt(woodInput.value) >= 2 && parseInt(ironInput.value) >= 1 && parseInt(stoneInput.value) >= 1) {
+            woodInput.value = parseInt(woodInput.value) - 2; // Deduct resources
+            ironInput.value = parseInt(ironInput.value) - 1;
+            stoneInput.value = parseInt(stoneInput.value) - 1;
+            const siegeInput = document.getElementById('siegeMachines');
+            siegeInput.value = parseInt(siegeInput.value) + 1; // Increment siege machine count
+            updateSummary();
+        } else {
+            alert("Not enough resources to build a Siege Machine!");
+        }
+    }
+
+    function buildCastle() {
+        const stoneInput = document.getElementById('stone');
+        if (parseInt(stoneInput.value) >= 4) {
+            stoneInput.value = parseInt(stoneInput.value) - 4; // Deduct resources
+            const castleInput = document.getElementById('castles');
+            castleInput.value = parseInt(castleInput.value) + 1; // Increment castle count
+            updateSummary();
+        } else {
+            alert("Not enough stone to build a Castle!");
+        }
+    }
+
+    function attackWin() {
+        document.getElementById('influence').value = parseInt(document.getElementById('influence').value) + 1; // Increase Influence
+        document.getElementById('gold').value = parseInt(document.getElementById('gold').value) + 50; // Increase Gold
+        updateSummary();
+    }
+
+    function attackLoss() {
+        const armyInput = document.getElementById('army');
+        armyInput.value = parseInt(armyInput.value) - 1; // Decrease Army
+        updateSummary();
+    }
+
+    function defenseWin() {
+        const pietyInput = document.getElementById('piety');
+        pietyInput.value = parseInt(pietyInput.value) + 1; // Increase Piety
+        updateSummary();
+    }
+
+    function defenseLoss() {
+        const armyInput = document.getElementById('army');
+        armyInput.value = parseInt(armyInput.value) - 1; // Decrease Army
+        updateSummary();
+    }
+
+    function generateStats() {
+        document.getElementById('army').value = Math.floor(Math.random() * 4) + 1; // Random value between 1 and 4
+        document.getElementById('favor').value = Math.floor(Math.random() * 4) + 1; // Random value between 1 and 4
+        document.getElementById('influence').value = Math.floor(Math.random() * 4) + 1; // Random value between 1 and 4
+        document.getElementById('piety').value = Math.floor(Math.random() * 4) + 1; // Random value between 1 and 4
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const summary = document.getElementById('summary');
+        summary.innerHTML = `
+            Name: ${document.getElementById('name').value || 'N/A'}<br>
+            Faction/Title: ${document.getElementById('faction').value || 'N/A'}<br>
+            Gold: ${document.getElementById('gold').value}<br>
+            Army: ${document.getElementById('army').value}<br>
+            Influence: ${document.getElementById('influence').value}<br>
+            Favor: ${document.getElementById('favor').value}<br>
+            Piety: ${document.getElementById('piety').value}<br>
+            Wood: ${document.getElementById('wood').value}<br>
+            Stone: ${document.getElementById('stone').value}<br>
+            Iron: ${document.getElementById('iron').value}<br>
+            Weapons: ${document.getElementById('weapons').value}<br>
+            Armor: ${document.getElementById('armor').value}<br>
+            Siege Machines: ${document.getElementById('siegeMachines').value}<br>
+            Castles: ${document.getElementById('castles').value}<br>
+            Claimed Tiles: ${Array.from(claimedTiles).join(', ')}
+        `;
+    }
+
+    function saveCharacter() {
+        // Logic for saving character can be implemented here
+    }
+
+    function loadCharacter() {
+        // Logic for loading character can be implemented here
+    }
+
+    function dailyCycle() {
+        const influence = parseInt(document.getElementById('influence').value);
+        const army = parseInt(document.getElementById('army').value);
+        let gold = parseInt(document.getElementById('gold').value);
+
+        // Add army and gold based on influence
+        document.getElementById('army').value = army + influence; // Add 1 army per influence
+        gold += influence * 100; // Add 100 gold per influence
+
+        // Charge for army
+        gold -= army * 50; // Charge 50 gold per army
+
+        // Update values
+        document.getElementById('gold').value = gold;
+        updateSummary();
+    }
+</script>
+</body>
+</html>
