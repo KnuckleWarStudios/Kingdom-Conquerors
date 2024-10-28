@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+ <link href='https://fonts.googleapis.com/css?family=MedievalSharp' rel='stylesheet'>
+    <style>
+        body {
+            font-family: 'MedievalSharp', sans-serif;
+            font-size: 14pt;
+            background-color: red; /* Set background color to red */
+            color: white; /* Set text color to white */
+        }
+        p.title {
+            font-size: 60px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+<title>About</title>
+<p>Kingdom Conquerors is developed by KnuckleWarStudios. Kingdom Conquerors is a digital tabletop role playing game (DTTRPG) based on medieval times and inspired by Justin Saulter's Dynasty Game. Kingdom Conquerors is a RNG based strategy game. We are always looking to expand our playerbase and improve the game.</p>
